@@ -19,6 +19,6 @@ COPY / .
 #RUN cron
 
 # command to run on container start
-RUN crontab -l | { cat; echo "* * * * * bash -c \"cd /code ;/usr/bin/python3 /code/main.py\""; } | crontab -
+RUN crontab -l | { cat; echo "0 20 * * * bash -c \"cd /code ;/usr/local/bin/python3 /code/main.py\""; } | crontab -
 
 ENTRYPOINT [ "cron", "-f" ]
