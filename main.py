@@ -23,71 +23,15 @@ import logging
 from dotenv import load_dotenv
 
 import telegram
-from tikapi import TikAPI, ValidationException, ResponseException
+
 from tqdm import tqdm
 
 from logger_config import LOGGING_CONFIG
 
+from scraptik_downloader import download_last_liked
+
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('TTtoTG_logger')
-
-def download_last_liked(api):
-
-	with open('config.json', 'r', encoding='utf-8') as f:
-		config = json.load(f)
-	last_video_id = config['last_video_id']
-
-	TTaccSecUid = os.environ['TTaccSecUid']
-	i=0
-	try:
-		response = api.public.likes(
-			secUid = TTaccSecUid)
-
-		updated_last_video_id = response.json().get('itemList')[0].get('video').get('id')
-		config['last_video_id'] = updated_last_video_id
-
-		with open('config.json', 'w', encoding='utf-8') as f:
-			json.dump(config, f, ensure_ascii=False, indent=4)
-
-		os.environ['last_video_id'] = str(updated_last_video_id)
-
-		while response:
-			cursor = response.json().get('cursor')
-			#print("Getting next items ", cursor)
-			logger.info(f"Last videoID is {last_video_id}")
-
-			for item in response.json().get('itemList'):
-				#print(item.get('video').get('downloadAddr'))
-				download_addr = item.get('video').get('downloadAddr')
-				videoId = item.get('video').get('id')
-				videoId_int = int(videoId)
-				if int(videoId_int) != int(last_video_id):
-				#if videoId_int > last_video_id:
-					#my_tt_videos.append(item.get('video').get('downloadAddr'))
-					i+=1
-					print(f'i = {i}')
-					print(f'Downloadind video {videoId_int}')
-					print(f'by addr {download_addr}')
-
-					try:
-						urllib.request.urlretrieve(download_addr, f'videos/video_{videoId}.mp4')
-					except ResponseException as e:
-						print('mdaa')
-					#last_video_id = videoId_int
-				else:
-					logger.info(f'{i} videos downloaded; updated_last_video_id={updated_last_video_id}')
-					return updated_last_video_id
-
-			response = response.next_items()
-
-	except ValidationException as e:
-		logger.error(e)
-		#print(e, e.field)
-
-	except ResponseException as e:
-		logger.error(e)
-		#print(e, e.response.status_code)
-
 
 
 class MyBot():
@@ -124,11 +68,12 @@ class MyBot():
 
 			#last_upload_time = time.time()
 			upload_counter += 1
-			if upload_counter >= 20 :
+			if upload_counter >= 15 :
 				batch_time = time.time() - start
 				time.sleep(max(0, 60 - batch_time + 1)) # waiting if needed
 				start = time.time()
 				upload_counter = 0
+		logger.info(f"{len(self.get_downloaded_videos_list())} videos has been uploaded")
 
 		return True
 
@@ -153,12 +98,14 @@ class MyBot():
 def run():
 	load_dotenv()
 
-	TikApiKey = os.environ['TikApiKey']
-	API = TikAPI(str(TikApiKey))
-	download_last_liked(API)
+	#TikApiKey = os.environ['TikApiKey']
+	#API = TikAPI(str(TikApiKey))
+	download_last_liked(logger)
 
 	token = os.environ.get("token")
+	print(token)
 	channel_name = os.environ.get("channel")
+	print(channel_name)
 	BOT = MyBot(token, channel_name)
 	BOT.run()
 
