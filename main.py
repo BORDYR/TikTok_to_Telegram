@@ -100,6 +100,7 @@ def run():
 
 	#TikApiKey = os.environ['TikApiKey']
 	#API = TikAPI(str(TikApiKey))
+
 	download_last_liked(logger)
 
 	token = os.environ.get("token")

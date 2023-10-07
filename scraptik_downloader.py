@@ -13,7 +13,7 @@ def download_last_liked(logger):
 	# defining a params dict for the parameters to be sent to the API
 	PARAMS = {
 	    'user_id': sec_uid,
-	    'count': '50',
+	    'count': '40',
 	    'max_time': '0'
 	  }
 	HEADERS = {
@@ -25,7 +25,7 @@ def download_last_liked(logger):
 	with open('config.json', 'r', encoding='utf-8') as f:
 		config = json.load(f)
 	last_video_id = config['last_video_id']
-
+	downloaded_videos_list = config['downloaded_videos_list']
 	TTaccSecUid = os.environ['TTaccSecUid']
 	i=0
 	try:
@@ -51,7 +51,8 @@ def download_last_liked(logger):
 				download_addr = item['video']['download_addr']['url_list'][2]
 				videoId = item['aweme_id']
 				videoId_int = int(videoId)
-				if int(videoId_int) != int(last_video_id):
+
+				if videoId_int not in downloaded_videos_list:
 				#if videoId_int > last_video_id:
 					#my_tt_videos.append(item.get('video').get('downloadAddr'))
 					i+=1
@@ -61,14 +62,17 @@ def download_last_liked(logger):
 					try:
 						urllib.request.urlretrieve(download_addr, f'videos/video_{videoId}.mp4')
 						updated_last_video_id = videoId
+						downloaded_videos_list.append(videoId_int)
 					except Exception as e:
 						print(f'Failed to download video {videoId}')
+						print(e)
 					#last_video_id = videoId_int
 				else:
 					logger.info(f'{i} videos downloaded; updated_last_video_id={updated_last_video_id}')
 					break
 
 		config['last_video_id'] = updated_last_video_id
+		config['downloaded_videos_list'] = downloaded_videos_list
 		with open('config.json', 'w', encoding='utf-8') as f:
 			json.dump(config, f, ensure_ascii=False, indent=4)
 

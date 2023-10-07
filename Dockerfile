@@ -3,6 +3,9 @@ FROM python:3.8
 
 RUN apt-get update && apt-get -y install cron
 
+# Create directories
+RUN mkdir logs
+RUN mkdir videos
 # set the working directory in the container
 WORKDIR /code
 
